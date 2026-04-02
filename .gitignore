@@ -1,0 +1,9 @@
+stitch.zip
+stitch/
+*.class
+*.jar
+node_modules/
+.next/
+target/
+.idea/
+.env.local

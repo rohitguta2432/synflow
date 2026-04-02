@@ -1,0 +1,91 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: synflow-postgres
+    environment:
+      POSTGRES_DB: synflow
+      POSTGRES_USER: synflow
+      POSTGRES_PASSWORD: synflow
+    ports:
+      - "5436:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - synflow-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: synflow-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - synflow-net
+
+  synflow-api:
+    build:
+      context: ./synflow-api
+      dockerfile: Dockerfile
+    container_name: synflow-api
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: synflow
+      DB_USERNAME: synflow
+      DB_PASSWORD: synflow
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: mySuperSecretKeyForJWTThatIsAtLeast256BitsLongEnough2024
+      ENCRYPTION_KEY: AES256SecretKeyForSynFlowApp2024!
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-placeholder}
+      CORS_ORIGINS: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/auth/login || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - synflow-net
+
+  synflow-web:
+    build:
+      context: ./synflow-web
+      dockerfile: Dockerfile
+    container_name: synflow-web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: synflow-nextauth-secret-key-2024
+    depends_on:
+      synflow-api:
+        condition: service_healthy
+    networks:
+      - synflow-net
+
+volumes:
+  pgdata:
+
+networks:
+  synflow-net:
+    driver: bridge
