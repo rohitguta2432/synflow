@@ -19,6 +19,7 @@ public class DealService {
 
     private final DealRepository dealRepository;
     private final UserRepository userRepository;
+    private final EmbeddingService embeddingService;
 
     public Page<DealDto> findAll(String search, String industry, String dealType, String status, Pageable pageable) {
         Deal.DealType type = dealType != null ? Deal.DealType.valueOf(dealType) : null;
@@ -50,7 +51,9 @@ public class DealService {
                 .createdBy(user)
                 .build();
 
-        return toDto(dealRepository.save(deal));
+        Deal saved = dealRepository.save(deal);
+        embeddingService.embedDeal(saved);
+        return toDto(saved);
     }
 
     @Transactional
@@ -68,7 +71,9 @@ public class DealService {
             deal.setStatus(Deal.DealStatus.valueOf(request.status()));
         }
 
-        return toDto(dealRepository.save(deal));
+        Deal saved = dealRepository.save(deal);
+        embeddingService.embedDeal(saved);
+        return toDto(saved);
     }
 
     @Transactional

@@ -6,6 +6,7 @@ import com.synflow.dto.UserDto;
 import com.synflow.security.JwtAuthFilter;
 import com.synflow.security.JwtTokenProvider;
 import com.synflow.service.AuthService;
+import com.synflow.service.EmbeddingService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -31,6 +32,7 @@ class AdminControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockBean private AuthService authService;
+    @MockBean private EmbeddingService embeddingService;
     @MockBean private JwtTokenProvider tokenProvider;
     @MockBean private JwtAuthFilter jwtAuthFilter;
 

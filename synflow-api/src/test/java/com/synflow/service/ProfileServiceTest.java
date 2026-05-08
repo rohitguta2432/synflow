@@ -32,6 +32,7 @@ class ProfileServiceTest {
     @Mock private ProfileConnectionRepository connectionRepository;
     @Mock private UserRepository userRepository;
     @Mock private EncryptionUtil encryptionUtil;
+    @Mock private EmbeddingService embeddingService;
 
     @InjectMocks private ProfileService profileService;
 
