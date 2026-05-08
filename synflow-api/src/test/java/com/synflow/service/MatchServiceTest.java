@@ -30,6 +30,7 @@ class MatchServiceTest {
     @Mock private MatchRepository matchRepository;
     @Mock private DealRepository dealRepository;
     @Mock private ProfileRepository profileRepository;
+    @Mock private EmbeddingService embeddingService;
 
     @InjectMocks private MatchService matchService;
 

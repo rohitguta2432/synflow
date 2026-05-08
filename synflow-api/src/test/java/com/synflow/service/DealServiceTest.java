@@ -27,6 +27,7 @@ class DealServiceTest {
 
     @Mock private DealRepository dealRepository;
     @Mock private UserRepository userRepository;
+    @Mock private EmbeddingService embeddingService;
 
     @InjectMocks private DealService dealService;
 

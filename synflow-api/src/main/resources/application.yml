@@ -46,6 +46,7 @@ app:
   openai:
     api-key: ${OPENAI_API_KEY:sk-placeholder}
     model: gpt-4o
+    embedding-model: text-embedding-3-small
     base-url: https://api.openai.com
 
   aws:
