@@ -26,6 +26,7 @@ public class ProfileService {
     private final ProfileConnectionRepository connectionRepository;
     private final UserRepository userRepository;
     private final EncryptionUtil encryptionUtil;
+    private final EmbeddingService embeddingService;
 
     private static final AtomicLong counter = new AtomicLong(System.currentTimeMillis() % 10000);
 
@@ -67,7 +68,9 @@ public class ProfileService {
                 .createdBy(user)
                 .build();
 
-        return toDto(profileRepository.save(profile));
+        Profile saved = profileRepository.save(profile);
+        embeddingService.embedProfile(saved);
+        return toDto(saved);
     }
 
     @Transactional
@@ -87,7 +90,9 @@ public class ProfileService {
         }
         profile.setSummary(request.summary());
 
-        return toDto(profileRepository.save(profile));
+        Profile saved = profileRepository.save(profile);
+        embeddingService.embedProfile(saved);
+        return toDto(saved);
     }
 
     @Transactional

@@ -24,11 +24,27 @@ public class MatchService {
     private final MatchRepository matchRepository;
     private final DealRepository dealRepository;
     private final ProfileRepository profileRepository;
+    private final EmbeddingService embeddingService;
+
+    // Cosine similarity below this baseline gets no bonus — OpenAI embeddings
+    // for unrelated text typically sit around 0.5–0.7, so we only reward genuine
+    // semantic closeness.
+    private static final double SEMANTIC_BASELINE = 0.70;
+    private static final double SEMANTIC_MAX_BONUS = 30.0;
+    private static final int FINAL_SCORE_CAP = 100;
 
     @Transactional
     public List<MatchDto> matchDealToProfiles(UUID dealId) {
         Deal deal = dealRepository.findById(dealId)
                 .orElseThrow(() -> new RuntimeException("Deal not found"));
+
+        // Make sure the deal has an embedding so semantic similarity can run.
+        // Best-effort: if OpenAI is unreachable, embeddings stay null and the
+        // similarity map is empty, leaving the rule-based score in charge.
+        embeddingService.ensureDealEmbedding(deal);
+        Map<UUID, Double> similarities = Optional
+                .ofNullable(embeddingService.findSimilaritiesForDeal(dealId))
+                .orElse(Map.of());
 
         // Clear previous matches for this deal
         matchRepository.deleteByDealId(dealId);
@@ -78,6 +94,18 @@ public class MatchService {
                 }
             }
             score += geoScore;
+
+            // Semantic bonus from embedding similarity (0–30 points, capped at 100 total).
+            Double similarity = similarities.get(profile.getId());
+            if (similarity != null && similarity > SEMANTIC_BASELINE) {
+                double scaled = (similarity - SEMANTIC_BASELINE)
+                        / (1.0 - SEMANTIC_BASELINE) * SEMANTIC_MAX_BONUS;
+                int bonus = (int) Math.min(SEMANTIC_MAX_BONUS, scaled);
+                if (bonus > 0) {
+                    score = Math.min(FINAL_SCORE_CAP, score + bonus);
+                    reasons.add("semantic similarity " + Math.round(similarity * 100) + "%");
+                }
+            }
 
             if (score > 0) {
                 results.add(new MatchResult(profile, score,
